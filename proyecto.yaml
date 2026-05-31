@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09' 
+Description: 'Infraestructura IaaS para Aplicación Multifactor' 
+Parameters: 
+  KeyName: 
+    Description: "Nombre de la llave .pem" 
+    Type: AWS::EC2::KeyPair::KeyName 
+Resources: 
+  GrupodeSeguridad: 
+    Type: AWS::EC2::SecurityGroup 
+    Properties: 
+      GroupDescription: "Puertos IoT: SSH, API y Web" 
+      SecurityGroupIngress: 
+        - {IpProtocol: tcp, FromPort: 22, ToPort: 22, CidrIp: 0.0.0.0/0}    # SSH 
+        - {IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0}    # HTTP Web
+        - {IpProtocol: tcp, FromPort: 5000, ToPort: 5000, CidrIp: 0.0.0.0/0} # API Flask (¡Cambiar el 8080 por el 5000 de tu proyecto!)
+
+  Instancia2FA: 
+    Type: AWS::EC2::Instance 
+    Properties: 
+      InstanceType: t3.micro  
+      ImageId: ami-07062e2a343acc423
+      KeyName: !Ref KeyName 
+      SecurityGroups: 
+        - !Ref GrupodeSeguridad 
+      UserData: 
+        Fn::Base64: !Sub | 
+          #!/bin/bash
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -y
+          apt-get install -y docker.io docker-compose-v2
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ubuntu
+          mkdir -p /home/ubuntu/2fa
+          chown -R ubuntu:ubuntu /home/ubuntu/2fa
+Outputs: 
+  PublicIP: 
+    Description: "IP Pública" 
+    Value: !GetAtt Instancia2FA.PublicIp
