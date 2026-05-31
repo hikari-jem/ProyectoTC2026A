@@ -1,4 +1,4 @@
-FROM python:3.1-slim
+FROM python:slim
 WORKDIR ./app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
