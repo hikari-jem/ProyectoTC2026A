@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventario - Panel de Control</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="navbar-inv">
+        <h2>Inventario</h2>
+        <button onclick="window.history.back()" class="btn-back">← Volver</button>
+    </div>
+    <div class="container-fluid">
+        <form class="form-inline-add" method="POST" action="/inventario">
+            <h3>➕ Agregar Nuevo Producto</h3>
+            <div class="form-inputs">
+                <input type="text" name="nombre" placeholder="Nombre del Producto" required>
+                <input type="number" step="0.01" name="precio" placeholder="Precio ($)" required>
+                <input type="number" name="stock" placeholder="Stock" required>
+                <select name="categoria" required>
+                    <option value="">Categoría Elige una...</option>
+                    <option value="Botanas">Botanas</option>
+                    <option value="Lácteos">Lácteos</option>
+                    <option value="Bebidas">Bebidas</option>
+                </select>
+                <button type="submit" class="btn-submit-add">+ Agregar</button>
+            </div>
+        </form>
+
+        <table class="table-products">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Categoría</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prod in productos %}
+                <tr>
+                    <td>#{{ prod.id }}</td>
+                    <td>{{ prod.nombre }}</td>
+                    <td class="text-green-bold">${{ "%.2f"|format(prod.precio) }}</td>
+                    <td><span class="pill-stock">{{ prod.stock }} u.</span></td>
+                    <td>{{ prod.categoria }}</td>
+                    <td>
+                        <button class="btn-action-edit">📝</button>
+                        <button class="btn-action-delete">🗑️</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
