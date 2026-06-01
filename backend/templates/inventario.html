@@ -7,7 +7,7 @@
 </head>
 <body>
     <div class="navbar-inv">
-        <h2>📦 Panel de Inventario y Almacén</h2>
+        <h2>Panel de Inventario y Almacén</h2>
         <button onclick="window.history.back()" class="btn-back">← Volver al Panel</button>
     </div>
 
@@ -63,29 +63,24 @@
     </div>
 
     <script>
-        // 1. CARGAR LOS DATOS DE LA TABLA AL FORMULARIO DE ARRIBA
         function cargarDatosEnFormulario(id) {
-            // Obtener los valores directamente del texto de la fila de la tabla
             const nombre = document.getElementById(`name-${id}`).textContent;
             const precio = parseFloat(document.getElementById(`price-${id}`).textContent);
             const stock = parseInt(document.getElementById(`stock-${id}`).textContent);
             const categoria = document.getElementById(`category-${id}`).textContent;
 
-            // Colocar los valores en los inputs de arriba
             document.getElementById('prod-id').value = id;
             document.getElementById('prod-nombre').value = nombre;
             document.getElementById('prod-precio').value = precio;
             document.getElementById('prod-stock').value = stock;
             document.getElementById('prod-categoria').value = categoria;
 
-            // Cambiar la estética del formulario para modo edición
             document.getElementById('form-title').textContent = `📝 Editando Producto #${id}`;
             document.getElementById('btn-submit').textContent = "💾 Actualizar Producto";
             document.getElementById('btn-submit').style.background = "#2563eb"; // Azul para editar
             document.getElementById('btn-cancel-edit').classList.remove('hidden');
         }
 
-        // 2. CANCELAR EDICIÓN Y LIMPIAR
         function cancelarEdicion() {
             document.getElementById('product-form').reset();
             document.getElementById('prod-id').value = "";
@@ -96,7 +91,6 @@
             document.getElementById('btn-cancel-edit').classList.add('hidden');
         }
 
-        // 3. PROCESAR ACCIÓN (AGREGAR O ACTUALIZAR VIA API)
         async function procesarFormulario(event) {
             event.preventDefault();
 
@@ -106,7 +100,6 @@
             const stock = document.getElementById('prod-stock').value;
             const categoria = document.getElementById('prod-categoria').value;
 
-            // Si el ID tiene datos, significa que estamos EDITANDO
             if (id) {
                 try {
                     const response = await fetch(`/editar-producto-ajax/${id}`, {
@@ -118,7 +111,7 @@
 
                     if (response.ok && data.status === 'success') {
                         alert("Producto actualizado con éxito.");
-                        window.location.reload(); // Recarga limpia para ver cambios en la tabla
+                        window.location.reload(); 
                     } else {
                         alert(data.message || "Error al actualizar.");
                     }
@@ -127,8 +120,6 @@
                     alert("Error de conexión con el servidor.");
                 }
             } else {
-                // Si el ID está vacío, es un producto NUEVO (Comportamiento normal por POST de Flask)
-                // Enviamos los datos simulando el envío tradicional para reutilizar tu ruta vieja
                 const formData = new FormData();
                 formData.append('nombre', nombre);
                 formData.append('precio', precio);
