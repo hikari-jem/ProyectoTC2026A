@@ -1,32 +1,29 @@
-// Configuración de la URL de la API (Flask)
-// En desarrollo local puede ser 'http://localhost:5000', pero usando rutas relativas
-// o la IP de AWS configurada en el despliegue final.
-const API_URL = window.location.origin; 
+const API_URL = ''; 
 
 let statusCheckInterval = null;
 
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+    // Extrayendo estrictamente el .value (texto plano) de los inputs
+    const usuario = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
 
     try {
-        // 1. Enviar credenciales a la API
         const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
+            method: 'POST', 
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ usuario, password }) 
         });
 
         const data = await response.json();
 
-        if (response.ok) {
-            // Si el login inicial es correcto, pasamos a esperar la aprobación móvil
+        if (response.ok && data.status === 'success') {
             mostrarPantallaEspera();
-            iniciarBucleVerificacion(username);
+            // Pasamos el ID único de solicitud que generó Flask, NO el objeto HTML
+            iniciarBucleVerificacion(data.id_solicitud);
         } else {
             alert(data.message || 'Credenciales incorrectas');
         }
@@ -42,34 +39,38 @@ function mostrarPantallaEspera() {
     document.getElementById('status-card').classList.remove('hidden');
 }
 
-function iniciarBucleVerificacion(username) {
+function iniciarBucleVerificacion(idSolicitud) {
     const statusMessage = document.getElementById('status-message');
     const spinner = document.getElementById('loading-spinner');
 
-    // 2. Configurar el setInterval para consultar el estado cada 3 segundos
     statusCheckInterval = setInterval(async () => {
         try {
-            const response = await fetch(`${API_URL}/check-status?username=${username}`);
+            // Consultamos la ruta limpia /check-status/<id> mapeada en Flask
+            const response = await fetch(`${API_URL}/check-status/${idSolicitud}`);
+            if (!response.ok) return;
+            
             const data = await response.json();
 
-            if (data.status === 'aprobado') {
+            if (data.estado === 'aprobado') {
                 clearInterval(statusCheckInterval);
-                spinner.classList.add('hidden');
+                if (spinner) spinner.classList.add('hidden');
                 statusMessage.textContent = '¡Acceso Concedido!';
                 statusMessage.className = 'status-text text-approved';
-                // Aquí puedes redirigir al usuario si es necesario:
-                // window.location.href = "/dashboard.html";
                 
-            } else if (data.status === 'denegado') {
+                // Redirección al Dashboard correspondiente según el rol de MySQL
+                setTimeout(() => {
+                    window.location.href = `/dashboard?rol=${data.rol}&usuario=${data.usuario}`;
+                }, 1000);
+                
+            } else if (data.estado === 'denegado') {
                 clearInterval(statusCheckInterval);
-                spinner.classList.add('hidden');
+                if (spinner) spinner.classList.add('hidden');
                 statusMessage.textContent = 'Acceso Denegado desde el dispositivo móvil.';
                 statusMessage.className = 'status-text text-denied';
             }
-            // Si el estado sigue siendo 'pendiente', el bucle continúa de forma silenciosa
 
         } catch (error) {
             console.error('Error consultando el estado de autenticación:', error);
         }
-    }, 3000); // 3000 milisegundos = 3 segundos
+    }, 2000); 
 }
