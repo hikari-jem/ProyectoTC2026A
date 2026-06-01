@@ -29,3 +29,19 @@ INSERT INTO productos (nombre, precio, stock, categoria) VALUES
 ('Leche Lala 1L', 28.00, 22, 'Lácteos'),
 ('Sabritas', 20.00, 26, 'Botanas'),
 ('Coca Cola 600ml', 18.00, 26, 'Bebidas');
+
+CREATE TABLE IF NOT EXISTS ventas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total DECIMAL(10, 2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS detalle_ventas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    venta_id INT,
+    producto_id INT,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
