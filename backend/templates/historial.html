@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de Ventas</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="navbar-inv">
+        <h2>Historial de Ventas</h2>
+        <button onclick="window.history.back()" class="btn-back">← Volver</button>
+    </div>
+    <div class="container" style="margin-top: 30px;">
+        <table class="table-products">
+            <thead>
+                <tr>
+                    <th>Folio Ticket</th>
+                    <th>Fecha y Hora del Cobro</th>
+                    <th>Monto Total Cobrado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if ventas %}
+                    {% for v in ventas %}
+                    <tr>
+                        <td><strong>#000{{ v.id }}</strong></td>
+                        <td>{{ v.fecha_formateada }} Hrs.</td>
+                        <td class="text-green-bold" style="font-size: 1.1rem;">${{ "%.2f"|format(v.total) }}</td>
+                        <td>
+                            <button class="btn-back" style="background-color: var(--primary-light); padding: 4px 10px;">Ver Detalle</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 30px; color: #64748b;">
+                            Aún no se han registrado ventas en el turno actual.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

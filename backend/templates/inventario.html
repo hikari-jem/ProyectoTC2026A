@@ -2,58 +2,162 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Inventario - Panel de Control</title>
+    <title>Inventario de Productos</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="navbar-inv">
-        <h2>Inventario</h2>
-        <button onclick="window.history.back()" class="btn-back">← Volver</button>
+        <h2>Panel de Inventario y Almacén</h2>
+        <button onclick="window.history.back()" class="btn-back">← Volver al Panel</button>
     </div>
+
     <div class="container-fluid">
-        <form class="form-inline-add" method="POST" action="/inventario">
-            <h3>➕ Agregar Nuevo Producto</h3>
-            <div class="form-inputs">
-                <input type="text" name="nombre" placeholder="Nombre del Producto" required>
-                <input type="number" step="0.01" name="precio" placeholder="Precio ($)" required>
-                <input type="number" name="stock" placeholder="Stock" required>
-                <select name="categoria" required>
-                    <option value="">Categoría Elige una...</option>
-                    <option value="Botanas">Botanas</option>
-                    <option value="Lácteos">Lácteos</option>
-                    <option value="Bebidas">Bebidas</option>
-                </select>
-                <button type="submit" class="btn-submit-add">+ Agregar</button>
-            </div>
-        </form>
+        <div class="form-inline-add">
+            <h3 id="form-title">➕ Agregar Nuevo Producto al Catálogo</h3>
+            <form id="product-form" onsubmit="procesarFormulario(event)">
+                <input type="hidden" id="prod-id" value="">
+                
+                <div class="form-inputs">
+                    <input type="text" id="prod-nombre" placeholder="Nombre del producto" required>
+                    <input type="number" step="0.01" id="prod-precio" placeholder="Precio ($)" required>
+                    <input type="number" id="prod-stock" placeholder="Stock inicial" required>
+                    <select id="prod-categoria" required>
+                        <option value="">Categoría...</option>
+                        <option value="Botanas">Botanas</option>
+                        <option value="Lácteos">Lácteos</option>
+                        <option value="Bebidas">Bebidas</option>
+                    </select>
+                    <button type="submit" id="btn-submit" class="btn-submit-add">Guardar Producto</button>
+                    <button type="button" id="btn-cancel-edit" class="btn-back hidden" onclick="cancelarEdicion()" style="background-color: var(--danger);">Cancelar</button>
+                </div>
+            </form>
+        </div>
 
         <table class="table-products">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Precio</th>
-                    <th>Stock</th>
-                    <th>Categoría</th>
-                    <th>Acciones</th>
+                    <th>PRODUCTO</th>
+                    <th>PRECIO UNITARIO</th>
+                    <th>STOCK DISPONIBLE</th>
+                    <th>CATEGORÍA</th>
+                    <th>ACCIONES</th>
                 </tr>
             </thead>
             <tbody>
                 {% for prod in productos %}
-                <tr>
+                <tr id="row-{{ prod.id }}">
                     <td>#{{ prod.id }}</td>
-                    <td>{{ prod.nombre }}</td>
-                    <td class="text-green-bold">${{ "%.2f"|format(prod.precio) }}</td>
-                    <td><span class="pill-stock">{{ prod.stock }} u.</span></td>
-                    <td>{{ prod.categoria }}</td>
+                    <td id="name-{{ prod.id }}">{{ prod.nombre }}</td>
+                    <td class="text-green-bold">$<span id="price-{{ prod.id }}">{{ "%.2f"|format(prod.precio) }}</span></td>
+                    <td><span class="pill-stock" id="stock-{{ prod.id }}">{{ prod.stock }} u.</span></td>
+                    <td>🏷️ <span id="category-{{ prod.id }}">{{ prod.categoria }}</span></td>
                     <td>
-                        <button class="btn-action-edit">📝</button>
-                        <button class="btn-action-delete">🗑️</button>
+                        <button class="btn-action-edit" onclick="cargarDatosEnFormulario('{{ prod.id }}')">📝</button>
+                        <button class="btn-action-delete" onclick="eliminarProductoConfirmado('{{ prod.id }}', '{{ prod.nombre }}')">🗑️</button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <script>
+        function cargarDatosEnFormulario(id) {
+            const nombre = document.getElementById(`name-${id}`).textContent;
+            const precio = parseFloat(document.getElementById(`price-${id}`).textContent);
+            const stock = parseInt(document.getElementById(`stock-${id}`).textContent);
+            const categoria = document.getElementById(`category-${id}`).textContent;
+
+            document.getElementById('prod-id').value = id;
+            document.getElementById('prod-nombre').value = nombre;
+            document.getElementById('prod-precio').value = precio;
+            document.getElementById('prod-stock').value = stock;
+            document.getElementById('prod-categoria').value = categoria;
+
+            document.getElementById('form-title').textContent = `📝 Editando Producto #${id}`;
+            document.getElementById('btn-submit').textContent = "💾 Actualizar Producto";
+            document.getElementById('btn-submit').style.background = "#2563eb"; // Azul para editar
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        }
+
+        function cancelarEdicion() {
+            document.getElementById('product-form').reset();
+            document.getElementById('prod-id').value = "";
+            
+            document.getElementById('form-title').textContent = "➕ Agregar Nuevo Producto al Catálogo";
+            document.getElementById('btn-submit').textContent = "Guardar Producto";
+            document.getElementById('btn-submit').style.background = "#059669"; // Verde original
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function procesarFormulario(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('prod-id').value;
+            const nombre = document.getElementById('prod-nombre').value;
+            const precio = document.getElementById('prod-precio').value;
+            const stock = document.getElementById('prod-stock').value;
+            const categoria = document.getElementById('prod-categoria').value;
+
+            if (id) {
+                try {
+                    const response = await fetch(`/editar-producto-ajax/${id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre, precio, stock, categoria })
+                    });
+                    const data = await response.json();
+
+                    if (response.ok && data.status === 'success') {
+                        alert("Producto actualizado con éxito.");
+                        window.location.reload(); 
+                    } else {
+                        alert(data.message || "Error al actualizar.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("Error de conexión con el servidor.");
+                }
+            } else {
+                const formData = new FormData();
+                formData.append('nombre', nombre);
+                formData.append('precio', precio);
+                formData.append('stock', stock);
+                formData.append('categoria', categoria);
+
+                try {
+                    const response = await fetch('/inventario', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert("Error al guardar el nuevo producto.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+
+        // 4. ELIMINAR PRODUCTO
+        async function eliminarProductoConfirmado(id, nombre) {
+            if (confirm(`¿Estás seguro de eliminar "${nombre}"?`)) {
+                try {
+                    const response = await fetch(`/eliminar-producto/${id}`, { method: 'POST' });
+                    const data = await response.json();
+                    if (response.ok && data.status === 'success') {
+                        document.getElementById(`row-${id}`).remove();
+                    } else {
+                        alert(data.message || "Error al eliminar.");
+                    }
+                } catch (error) {
+                    alert("Error de red.");
+                }
+            }
+        }
+    </script>
 </body>
 </html>
