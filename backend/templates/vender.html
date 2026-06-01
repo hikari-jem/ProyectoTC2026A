@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Punto de Venta</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="navbar-inv">
+        <h2>Terminal de Cobro</h2>
+        <button onclick="window.history.back()" class="btn-back">← Volver al Inicio</button>
+    </div>
+    <div class="pos-layout">
+        <div class="pos-sidebar">
+            <h3>Buscar Producto</h3>
+            <label>Seleccionar del catálogo</label>
+            <select id="select-product">
+                <option value="">Elige un producto...</option>
+                {% for prod in productos %}
+                <option value="{{ prod.id }}" data-precio="{{ prod.precio }}">{{ prod.nombre }} - ${{ prod.precio }} (Stock: {{ prod.stock }})</option>
+                {% endfor %}
+            </select>
+            <label>Cantidad</label>
+            <input type="number" id="input-qty" value="1" min="1">
+            <button class="btn-add-cart" onclick="agregarAlCarrito()">➕ Agregar a la cuenta</button>
+        </div>
+        <div class="pos-main">
+            <h3>Cuenta Actual</h3>
+            <table class="table-cart">
+                <thead>
+                    <tr>
+                        <th>PRODUCTO</th>
+                        <th>CANT.</th>
+                        <th>PRECIO U.</th>
+                        <th>SUBTOTAL</th>
+                    </tr>
+                </thead>
+                <tbody id="cart-body">
+                    </tbody>
+            </table>
+            <div class="total-section">
+                <h2>TOTAL A COBRAR: <span class="text-green" id="cart-total">$0.00</span></h2>
+                <button class="btn-process-pay" onclick="enviarVentaAFlak()">Procesar Pago</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let carrito = [];
+        let totalGlobal = 0;
+
+        function agregarAlCarrito() {
+            const select = document.getElementById('select-product');
+            const qtyInput = document.getElementById('input-qty');
+            const qty = parseInt(qtyInput.value);
+            
+            if(!select.value || qty <= 0) return;
+            
+            const option = select.options[select.selectedIndex];
+            const id = option.value;
+            const name = option.text.split(' - ')[0];
+            const price = parseFloat(option.getAttribute('data-precio'));
+            const subtotal = price * qty;
+            
+            // Guardar datos en el arreglo global
+            carrito.push({ id: parseInt(id), cantidad: qty, precio: price });
+            
+            // Renderizar fila en la tabla
+            const row = `<tr><td>${name}</td><td>${qty}</td><td>$${price.toFixed(2)}</td><td>$${subtotal.toFixed(2)}</td></tr>`;
+            document.getElementById('cart-body').insertAdjacentHTML('beforeend', row);
+            
+            // Calcular e incrementar totales
+            totalGlobal += subtotal;
+            document.getElementById('cart-total').textContent = `$${totalGlobal.toFixed(2)}`;
+            
+            // Resetear inputs
+            qtyInput.value = 1;
+            select.value = "";
+        }
+
+        async function enviarVentaAFlak() {
+            if (carrito.length === 0) {
+                alert("Por favor, agrega al menos un producto a la cuenta.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/procesar-pago', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productos: carrito, total: totalGlobal })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    alert(`¡Venta procesada con éxito! Ticket de venta: #${data.venta_id}`);
+                    // Limpiar pantalla y recargar inventario local
+                    window.location.reload();
+                } else {
+                    alert(data.message || "Error al registrar la venta");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("No se pudo conectar con el servidor para registrar el cobro.");
+            }
+        }
+    </script>
+</body>
+</html>
