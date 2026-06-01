@@ -12,7 +12,6 @@ CORS(app)
 solicitudes_auth = {}
 
 def get_db_connection():
-    """Establece conexión con el contenedor de MySQL utilizando variables de entorno."""
     return mysql.connector.connect(
         host=os.getenv('DB_HOST', 'localhost'),
         user=os.getenv('DB_USER', 'user_tienda'),
@@ -154,10 +153,6 @@ def registrar_empleado():
 
     return render_template('registrar_empleado.html')
 
-# ==========================================
-#         LOGICA DEL PUNTO DE VENTA
-# ==========================================
-
 @app.route('/procesar-pago', methods=['POST'])
 def procesar_pago():
     data = request.get_json(force=True) or {}
@@ -171,23 +166,19 @@ def procesar_pago():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # 1. Insertar la venta global
         cursor.execute("INSERT INTO ventas (total) VALUES (%s)", (total,))
         venta_id = cursor.lastrowid
 
-        # 2. Registrar el detalle y descontar inventario por cada producto
         for item in carrito:
             prod_id = item['id']
             cantidad = item['cantidad']
             precio = item['precio']
 
-            # Insertar en el desglose del ticket
             cursor.execute(
                 "INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
                 (venta_id, prod_id, cantidad, precio)
             )
 
-            # Restar del Stock actual en la tabla productos
             cursor.execute(
                 "UPDATE productos SET stock = stock - %s WHERE id = %s",
                 (cantidad, prod_id)
@@ -203,9 +194,6 @@ def procesar_pago():
         return jsonify({"status": "error", "message": f"Error al procesar el pago: {str(e)}"}), 500
 
 
-# ==========================================
-#         MÓDULO DEL HISTORIAL
-# ==========================================
 
 @app.route('/historial', methods=['GET'])
 def historial():
@@ -213,7 +201,6 @@ def historial():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # Obtenemos las ventas ordenadas por la más reciente
         cursor.execute("SELECT id, DATE_FORMAT(fecha, '%d/%m/%Y %H:%i') as fecha_formateada, total FROM ventas ORDER BY id DESC")
         ventas_registradas = cursor.fetchall()
         
@@ -224,6 +211,45 @@ def historial():
     except Exception as e:
         return f"Error al cargar el historial: {str(e)}", 500
 
+@app.route('/eliminar-producto/<int:id>', methods=['POST'])
+def eliminar_producto(id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Eliminamos el producto por su ID
+        cursor.execute("DELETE FROM productos WHERE id = %s", (id,))
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "success", "message": "Producto eliminado correctamente"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Error al eliminar: {str(e)}"}), 500
+
+
+@app.route('/editar-producto-ajax/<int:id>', methods=['POST'])
+def editar_producto_ajax(id):
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre')
+        precio = data.get('precio')
+        stock = data.get('stock')
+        categoria = data.get('categoria')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE productos SET nombre=%s, precio=%s, stock=%s, categoria=%s WHERE id=%s",
+            (nombre, precio, stock, categoria, id)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({"status": "success", "message": "Producto modificado con éxito"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
