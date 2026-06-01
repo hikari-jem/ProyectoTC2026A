@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Tienda de Abarrotes</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-light">
+    <div class="navbar">
+        <span class="nav-brand">🏪 Tienda Abarrotes</span>
+        <a href="/login" class="btn-logout">Logout</a>
+    </div>
+    <div class="container">
+        <div class="welcome-card">
+            <h2>¡Bienvenido, {{ usuario }}!</h2>
+            <p>Has iniciado sesión como: <span class="badge badge-cashier">{{ rol }}</span></p>
+        </div>
+        <div class="grid-menu binary">
+            <a href="/vender" class="menu-card large">
+                <div class="icon text-orange">🛒</div>
+                <h3>Abrir Punto de Venta</h3>
+                <p>Iniciar cobro de productos</p>
+            </a>
+            <a href="/historial" class="menu-card large">
+    <div class="icon text-blue">🕒</div>
+    <h3>Historial de Ventas</h3>
+    <p>Revisar ventas del turno</p>
+</a>
+        </div>
+    </div>
+</body>
+</html>
