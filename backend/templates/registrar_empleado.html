@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Empleado</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-light flex-center">
+    <div class="register-card">
+        <div class="avatar-icon">👤</div>
+        <h2>Registrar Empleado</h2>
+        <p>Crea una nueva cuenta de acceso al sistema</p>
+        <form method="POST" action="/registrar-empleado">
+            <input type="text" name="nombre_completo" placeholder="Nombre Completo" required>
+            <input type="text" name="username" placeholder="Nombre de Usuario (Login)" required>
+            <input type="password" name="password" placeholder="Contraseña temporal" required>
+            <select name="rol" required>
+                <option value="">Selecciona el nivel de acceso...</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Cajero">Cajero</option>
+            </select>
+            <div class="form-actions">
+                <button type="button" onclick="window.history.back()" class="btn-cancel">← Cancelar</button>
+                <button type="submit" class="btn-save">✔ Guardar</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
